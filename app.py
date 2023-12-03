@@ -51,6 +51,7 @@ class SpamLSTM(nn.Module):
         self.fc = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, output_size)
         self.sigmoid = nn.Sigmoid()
 
+    # TODO : Improve forward function 
     def forward(self, x):
         out, _ = self.lstm(x)
         out = self.fc(out) 
@@ -72,7 +73,7 @@ optimizer = optim.Adam(lstm_model.parameters(), lr=0.001)
 loss_values = []  # To store loss values
 
 # Training loop
-num_epochs = 10
+num_epochs = 20
 for epoch in range(num_epochs):
     lstm_model.train()
     for batch_X, batch_y in train_loader:
@@ -82,7 +83,7 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
-        loss_values.append(loss.item())
+    loss_values.append(loss.item())
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {loss.item():.4f}")
 
 print(loss_values)
@@ -95,3 +96,4 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
+
