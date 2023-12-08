@@ -55,7 +55,6 @@ class File_reader(object):
 
     label_tensor = torch.as_tensor(ham_label + spam_label, dtype = torch.int16)
 
-    import pdb; pdb.set_trace()
     return data, label_tensor
 
   def print_sample(self, which ="both"): # ham, spam or both
