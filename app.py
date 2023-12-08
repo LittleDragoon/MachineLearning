@@ -13,53 +13,58 @@ from torch.utils.data import DataLoader, TensorDataset
 from transformers import AutoTokenizer
 from Enron_dataset.file_reader import File_reader
 
-# Create dataloader from enron dataset
+# 1) Create dataloader from enron dataset
 
 fr = File_reader()
 X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = 3000)
 
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+### 2) From data (string) to Tokenized data and Attention masks tensors before padding
 
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 data_batch_size = 512 
-X_data_attention_masks = []
-#Tokenize data using BertTokenizer (which has a limit of 512 tokens)
+X_tokenized_before_padding = []
+X_tokenized_attention_masks_before_padding = []
+#Tokenize data using BertTokenizer with batches (Bert has a limit of 512 tokens)
 for i in range(len(X_data)):  
-    mail = X_data[i]
+    mail_i = X_data[i]
     tokenized_batches = []
     attention_masks_batches = []
-    for batch_number in range(0, len(mail), data_batch_size):
-        batch_texts = mail[batch_number:batch_number+data_batch_size]
-        batch_X_data = tokenizer(batch_texts, return_tensors='pt', padding=True, truncation=True, max_length=512)
-        tokenized_batches.append(batch_X_data['input_ids'])
+
+    for batch_number in range(0, len(mail_i), data_batch_size):
+        # tokenize data
+        batch_texts = mail_i[batch_number:batch_number+data_batch_size]
+        tokenized_batch = tokenizer(batch_texts, return_tensors='pt', padding=True, truncation=True, max_length=512)
+        tokenized_batches.append(tokenized_batch['input_ids'])
 
         # add attention mask 
-        batch_attention_mask = batch_X_data['attention_mask']
+        batch_attention_mask = tokenized_batch['attention_mask']
         attention_masks_batches.append(batch_attention_mask)
 
 
-    X_data[i] = torch.cat(tokenized_batches, dim=1)
-    X_data_attention_masks.append(torch.cat(attention_masks_batches, dim=1))
+    X_tokenized_before_padding.append(torch.cat(tokenized_batches, dim=1))
+    X_tokenized_attention_masks_before_padding.append(torch.cat(attention_masks_batches, dim=1))
 
 
+### 3) Add padding (to size of longest data)
 
-# truncate data to size of longest data
-max_len = max([len(tensor[0]) for tensor in X_data])
+max_len = max([len(tensor[0]) for tensor in X_tokenized_before_padding])
+
+for i in range(len(X_tokenized_before_padding)):
+    X_tokenized_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_before_padding[i][0])),0)(X_tokenized_before_padding[i])
+    X_tokenized_attention_masks_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_attention_masks_before_padding[i][0])),0)(X_tokenized_attention_masks_before_padding[i])
 
 
-for i in range(len(X_data)):
-    X_data[i] = nn.ConstantPad1d((0, max_len - len(X_data[i][0])),0)(X_data[i])
-    X_data_attention_masks[i] = nn.ConstantPad1d((0, max_len - len(X_data_attention_masks[i][0])),0)(X_data_attention_masks[i])
+X_tokenized_after_padding = torch.cat(X_tokenized_before_padding, dim=0)
+X_attention_masks_after_padding = torch.cat(X_tokenized_attention_masks_before_padding, dim=0).unsqueeze(2)
+flattened_features = X_attention_masks_after_padding.clone().detach().to(dtype=torch.float32).mean(dim=1) #pooling
 
+### 4) We now have X_tokenized_after_padding (Tokenized data with padding) and flattened_features (Attention masks pooled)
+### We can now create a PyTorch dataset and data loaders
 
-X_data = torch.cat(X_data, dim=0)
-X_data_attention_masks = torch.cat(X_data_attention_masks, dim=0).unsqueeze(2)
-flattened_features = X_data_attention_masks.clone().detach().to(dtype=torch.float32).mean(dim=1) #pooling
+# Question : Here, do we need to standardize the data/features ?
 
-# Question : Do we need to standardize the data/features ?
-
-# Convert data to PyTorch tensors
-X = X_data.clone().detach().to(dtype=torch.float32)
+X = X_tokenized_after_padding.clone().detach().to(dtype=torch.float32)
 y = Y_label.clone().detach().to(dtype=torch.float32)
 
 
