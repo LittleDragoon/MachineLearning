@@ -45,7 +45,9 @@ for i in range(len(X_data)):
     X_tokenized_before_padding.append(torch.cat(tokenized_batches, dim=1))
     X_tokenized_attention_masks_before_padding.append(torch.cat(attention_masks_batches, dim=1))
 
+import pdb
 
+pdb.set_trace()
 ### 3) Add padding (to size of longest data)
 
 max_len = max([len(tensor[0]) for tensor in X_tokenized_before_padding])
@@ -54,15 +56,20 @@ for i in range(len(X_tokenized_before_padding)):
     X_tokenized_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_before_padding[i][0])),0)(X_tokenized_before_padding[i])
     X_tokenized_attention_masks_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_attention_masks_before_padding[i][0])),0)(X_tokenized_attention_masks_before_padding[i])
 
+pdb.set_trace()
 
 X_tokenized_after_padding = torch.cat(X_tokenized_before_padding, dim=0)
 X_attention_masks_after_padding = torch.cat(X_tokenized_attention_masks_before_padding, dim=0).unsqueeze(2)
 flattened_features = X_attention_masks_after_padding.clone().detach().to(dtype=torch.float32).mean(dim=1) #pooling
 
+# import pdb
+
+pdb.set_trace()
+
 ### 4) We now have X_tokenized_after_padding (Tokenized data with padding) and flattened_features (Attention masks pooled)
 ### We can now create a PyTorch dataset and data loaders
 
-# Question : Here, do we need to standardize the data/features ?
+# Question : Here, do we need to standardize the data/featnures ?
 
 X = X_tokenized_after_padding.clone().detach().to(dtype=torch.float32)
 y = Y_label.clone().detach().to(dtype=torch.float32)
@@ -72,16 +79,67 @@ y = Y_label.clone().detach().to(dtype=torch.float32)
 SPLIT_RATIO = 0.8
 split_idx = int(SPLIT_RATIO * len(X))
 
-X_train, y_train = X[:split_idx], y[:split_idx]
-X_test, y_test = X[split_idx:], y[split_idx:]
+X_train, attention_mask_train, y_train = X[:split_idx], flattened_features[:split_idx], y[:split_idx]
+X_test, attention_mask_test, y_test = X[split_idx:], flattened_features[split_idx:], y[split_idx:]
+
+
+# import pdb
+
+# pdb.set_trace()
 
 # Create a PyTorch dataset and data loaders
-train_dataset = TensorDataset(X_train, y_train)
-test_dataset = TensorDataset(X_test, y_test)
+train_dataset = TensorDataset(X_train, attention_mask_train,  y_train)
+test_dataset = TensorDataset(X_test, attention_mask_test, y_test)
 
 batch_size = 64
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-for batch in train_dataset:
-    print(batch)
+
+pdb.set_trace()
+
+# for batch in train_dataset:
+#     print(batch)
+
+# Model
+class BERTMLPClassifier(nn.Module):
+    def __init__(self, bert_model_name='bert-base-uncased', mlp_input_dim=768, mlp_hidden_dim=256, num_classes=2):
+        super(BERTMLPClassifier, self).__init__()
+
+        # BERT model for embedding
+        self.bert = BertModel.from_pretrained(bert_model_name)
+        self.dropout = nn.Dropout(0.1)
+
+        # MLP for classification
+        self.mlp = nn.Sequential(
+            nn.Linear(mlp_input_dim, mlp_hidden_dim), # input layer
+            nn.ReLU(), # activation function
+            nn.Dropout(0.1), # dropout added as regularizer
+            nn.Linear(mlp_hidden_dim, num_classes) # classification layer
+        )
+
+    def forward(self, input_ids, attention_mask):
+        # BERT embedding
+        outputs = self.bert(input_ids, attention_mask=attention_mask) 
+        pooled_output = outputs['pooler_output']
+        pooled_output = self.dropout(pooled_output)
+
+        # MLP classification
+        logits = self.mlp(pooled_output)
+        return logits
+
+
+# training
+model = BERTMLPClassifier()
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+num_epochs = 4
+for epoch in range(num_epochs):
+    for batch_x, attention_mask, batch_y in train_loader:
+        pdb.set_trace()
+        optimizer.zero_grad() # 
+        logits = model(batch_x, attention_mask)
+        loss = criterion(logits, batch_y)
+        loss.backward()
+        optimizer.step()
+    print(f"Epoch {epoch+1}/{num_epochs} : loss = {loss.item():.4f}")
