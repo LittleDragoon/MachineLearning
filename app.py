@@ -8,7 +8,7 @@
 import pdb
 import torch
 import torch.nn as nn
-from transformers import BertModel, BertTokenizer
+from transformers import BertModel, BertTokenizer, AlbertModel, AlbertTokenizer
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import AutoTokenizer
 from Enron_dataset.file_reader import File_reader
@@ -22,7 +22,7 @@ X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "defa
 
 ### 2) From data (string) to Tokenized data and Attention masks tensors before padding
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+tokenizer = AutoTokenizer.from_pretrained("albert-base-v2")
 data_batch_size = 512 
 X_tokenized_before_padding = []
 X_tokenized_attention_masks_before_padding = []
@@ -104,12 +104,13 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 #     print(batch)
 
 # Model
-class BERTMLPClassifier(nn.Module):
-    def __init__(self, bert_model_name='bert-base-uncased', mlp_input_dim=768, mlp_hidden_dim=256, num_classes=2):
-        super(BERTMLPClassifier, self).__init__()
+# Albert is a lite version of BERT, with 10x fewer parameters
+class ALBERTMLPClassifier(nn.Module):
+    def __init__(self, albert_model_name='albert-base-v2', mlp_input_dim=768, mlp_hidden_dim=256, num_classes=2):
+        super(ALBERTMLPClassifier, self).__init__()
 
-        # BERT model for embedding
-        self.bert = BertModel.from_pretrained(bert_model_name)
+        # ALBERT model for embedding
+        self.albert = AlbertModel.from_pretrained(albert_model_name)
         self.dropout = nn.Dropout(0.1)
 
         # MLP for classification
@@ -122,7 +123,7 @@ class BERTMLPClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         # BERT embedding
-        outputs = self.bert(input_ids, attention_mask=attention_mask) 
+        outputs = self.albert(input_ids, attention_mask=attention_mask) 
         pooled_output = outputs['pooler_output']
         pooled_output = self.dropout(pooled_output)
 
@@ -132,7 +133,7 @@ class BERTMLPClassifier(nn.Module):
 
 
 # training
-model = BERTMLPClassifier()
+model = ALBERTMLPClassifier()
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 num_epochs = 10
