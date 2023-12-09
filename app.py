@@ -5,19 +5,20 @@
 # Elle sera donc entrainée en même temps que le reste du réseau et permettra au réseau de mieux comprendre les mots
 
 # penser à enlever les caractères spéciaux, les \n (à remplacer par des espaces),...
-
+import pdb
 import torch
 import torch.nn as nn
 from transformers import BertModel, BertTokenizer
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import AutoTokenizer
 from Enron_dataset.file_reader import File_reader
+import numpy as np
+import matplotlib.pyplot as plt
 
 # 1) Create dataloader from enron dataset
 
 fr = File_reader()
-X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = 3000)
-
+X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = 50)
 
 ### 2) From data (string) to Tokenized data and Attention masks tensors before padding
 
@@ -45,34 +46,38 @@ for i in range(len(X_data)):
     X_tokenized_before_padding.append(torch.cat(tokenized_batches, dim=1))
     X_tokenized_attention_masks_before_padding.append(torch.cat(attention_masks_batches, dim=1))
 
-import pdb
-
-pdb.set_trace()
 ### 3) Add padding (to size of longest data)
 
-max_len = max([len(tensor[0]) for tensor in X_tokenized_before_padding])
+# max_len = max([len(tensor[0]) for tensor in X_tokenized_before_padding])
+max_len = 512
 
 for i in range(len(X_tokenized_before_padding)):
-    X_tokenized_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_before_padding[i][0])),0)(X_tokenized_before_padding[i])
-    X_tokenized_attention_masks_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_attention_masks_before_padding[i][0])),0)(X_tokenized_attention_masks_before_padding[i])
+    if X_tokenized_before_padding[i].size(1) > max_len:
+        # Truncate the sequence if its length is greater than max_len
+        X_tokenized_before_padding[i] = torch.tensor(X_tokenized_before_padding[i][:,:max_len])
+        X_tokenized_attention_masks_before_padding[i] = torch.tensor(X_tokenized_attention_masks_before_padding[i][:,:max_len])
+    else:
+        # Pad the sequence if its length is less than max_len
+        X_tokenized_before_padding[i] = nn.ConstantPad1d((0, max_len - X_tokenized_before_padding[i].size(1)), 0)(X_tokenized_before_padding[i])
+        X_tokenized_attention_masks_before_padding[i] = nn.ConstantPad1d((0, max_len - X_tokenized_attention_masks_before_padding[i].size(1)), 0)(X_tokenized_attention_masks_before_padding[i])
 
-pdb.set_trace()
+    
+    # X_tokenized_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_before_padding[i][0])),0)(X_tokenized_before_padding[i])
+    # X_tokenized_attention_masks_before_padding[i] = nn.ConstantPad1d((0, max_len - len(X_tokenized_attention_masks_before_padding[i][0])),0)(X_tokenized_attention_masks_before_padding[i])
+
 
 X_tokenized_after_padding = torch.cat(X_tokenized_before_padding, dim=0)
 X_attention_masks_after_padding = torch.cat(X_tokenized_attention_masks_before_padding, dim=0).unsqueeze(2)
 flattened_features = X_attention_masks_after_padding.clone().detach().to(dtype=torch.float32).mean(dim=1) #pooling
 
-# import pdb
-
-pdb.set_trace()
 
 ### 4) We now have X_tokenized_after_padding (Tokenized data with padding) and flattened_features (Attention masks pooled)
 ### We can now create a PyTorch dataset and data loaders
 
 # Question : Here, do we need to standardize the data/featnures ?
 
-X = X_tokenized_after_padding.clone().detach().to(dtype=torch.float32)
-y = Y_label.clone().detach().to(dtype=torch.float32)
+X = X_tokenized_after_padding.clone().detach().to(dtype=torch.int64)
+y = Y_label.clone().detach().to(dtype=torch.int64)
 
 
 # Manual split into train and test sets
@@ -83,7 +88,6 @@ X_train, attention_mask_train, y_train = X[:split_idx], flattened_features[:spli
 X_test, attention_mask_test, y_test = X[split_idx:], flattened_features[split_idx:], y[split_idx:]
 
 
-# import pdb
 
 # pdb.set_trace()
 
@@ -95,8 +99,6 @@ batch_size = 64
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-
-pdb.set_trace()
 
 # for batch in train_dataset:
 #     print(batch)
@@ -133,13 +135,29 @@ class BERTMLPClassifier(nn.Module):
 model = BERTMLPClassifier()
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-num_epochs = 4
+num_epochs = 10
+loss_values = []
 for epoch in range(num_epochs):
+    index = 0
+    print("epoch : ", epoch)
     for batch_x, attention_mask, batch_y in train_loader:
-        pdb.set_trace()
         optimizer.zero_grad() # 
-        logits = model(batch_x, attention_mask)
+        new_batch_x = torch.split(batch_x, 512,1)[0]
+        new_attention_mask = torch.split(attention_mask, 512,1)[0]
+        logits = model(new_batch_x, new_attention_mask)
         loss = criterion(logits, batch_y)
         loss.backward()
         optimizer.step()
+    loss_values.append(loss.item())
     print(f"Epoch {epoch+1}/{num_epochs} : loss = {loss.item():.4f}")
+
+print(loss_values)
+plt.figure(figsize=(10, 5))
+plt.plot(loss_values, label='Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Loss Curve')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
