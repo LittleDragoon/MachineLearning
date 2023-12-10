@@ -54,8 +54,8 @@ max_len = 512
 for i in range(len(X_tokenized_before_padding)):
     if X_tokenized_before_padding[i].size(1) > max_len:
         # Truncate the sequence if its length is greater than max_len
-        X_tokenized_before_padding[i] = torch.tensor(X_tokenized_before_padding[i][:,:max_len])
-        X_tokenized_attention_masks_before_padding[i] = torch.tensor(X_tokenized_attention_masks_before_padding[i][:,:max_len])
+        X_tokenized_before_padding[i] = X_tokenized_before_padding[i][:,:max_len].clone().detach()
+        X_tokenized_attention_masks_before_padding[i] = X_tokenized_attention_masks_before_padding[i][:,:max_len].clone().detach()
     else:
         # Pad the sequence if its length is less than max_len
         X_tokenized_before_padding[i] = nn.ConstantPad1d((0, max_len - X_tokenized_before_padding[i].size(1)), 0)(X_tokenized_before_padding[i])
@@ -87,9 +87,6 @@ split_idx = int(SPLIT_RATIO * len(X))
 X_train, attention_mask_train, y_train = X[:split_idx], flattened_features[:split_idx], y[:split_idx]
 X_test, attention_mask_test, y_test = X[split_idx:], flattened_features[split_idx:], y[split_idx:]
 
-
-
-# pdb.set_trace()
 
 # Create a PyTorch dataset and data loaders
 train_dataset = TensorDataset(X_train, attention_mask_train,  y_train)
@@ -143,9 +140,9 @@ for epoch in range(num_epochs):
     print("epoch : ", epoch)
     for batch_x, attention_mask, batch_y in train_loader:
         optimizer.zero_grad() # 
-        new_batch_x = torch.split(batch_x, 512,1)[0]
-        new_attention_mask = torch.split(attention_mask, 512,1)[0]
-        logits = model(new_batch_x, new_attention_mask)
+        # new_batch_x = torch.split(batch_x, 512,1)[0]
+        # new_attention_mask = torch.split(attention_mask, 512,1)[0]
+        logits = model(batch_x, attention_mask)
         loss = criterion(logits, batch_y)
         loss.backward()
         optimizer.step()
