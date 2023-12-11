@@ -16,13 +16,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 1) Create dataloader from enron dataset
-
+bert_model_name = "albert-base-v2"
 fr = File_reader()
 X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = 50)
 
 ### 2) From data (string) to Tokenized data and Attention masks tensors before padding
 
-tokenizer = AutoTokenizer.from_pretrained("albert-base-v2")
+tokenizer = AutoTokenizer.from_pretrained(bert_model_name)
 data_batch_size = 512 
 X_tokenized_before_padding = []
 X_tokenized_attention_masks_before_padding = []
@@ -32,7 +32,7 @@ for i in range(len(X_data)):
     tokenized_batches = []
     attention_masks_batches = []
 
-    for batch_number in range(0, len(mail_i), data_batch_size):
+    for batch_number in range(len(mail_i), data_batch_size):
         # tokenize data
         batch_texts = mail_i[batch_number:batch_number+data_batch_size]
         tokenized_batch = tokenizer(batch_texts, return_tensors='pt', padding=True, truncation=True, max_length=512)
@@ -88,49 +88,51 @@ X_train, attention_mask_train, y_train = X[:split_idx], flattened_features[:spli
 X_test, attention_mask_test, y_test = X[split_idx:], flattened_features[split_idx:], y[split_idx:]
 
 
-# Create a PyTorch dataset and data loaders
-train_dataset = TensorDataset(X_train, attention_mask_train,  y_train)
-test_dataset = TensorDataset(X_test, attention_mask_test, y_test)
+# Compute the embeddings
+bert_model = AlbertModel.from_pretrained(bert_model_name)
+def extract_bert_embeddings(model, input_ids, attention_mask):
+    outputs = model(input_ids, attention_mask)
+    embeddings = outputs.last_hidden_state[:,0,:] # CLS token, representation of the whole sequence
+    return embeddings
+
+# create dataloaders
+train_embeddings = extract_bert_embeddings(bert_model, X_train, attention_mask_train)
+test_embeddings = extract_bert_embeddings(bert_model, X_test, attention_mask_test)
+
+train_embeddings = train_embeddings.detach().numpy()
+test_embeddings = test_embeddings.detach().numpy()
+
+train_embeddings = torch.from_numpy(train_embeddings)
+test_embeddings = torch.from_numpy(test_embeddings)
+
+train_dataset = TensorDataset(train_embeddings, y_train)
+test_dataset = TensorDataset(test_embeddings, y_test)
 
 batch_size = 64
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
-# for batch in train_dataset:
-#     print(batch)
-
 # Model
-# Albert is a lite version of BERT, with 10x fewer parameters
-class ALBERTMLPClassifier(nn.Module):
-    def __init__(self, albert_model_name='albert-base-v2', mlp_input_dim=768, mlp_hidden_dim=256, num_classes=2):
-        super(ALBERTMLPClassifier, self).__init__()
+#MLP
+class MLP(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size) 
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, num_classes)  
+    
+    def forward(self, x):
+        out = self.fc1(x)
+        out = self.relu(out)
+        out = self.fc2(out)
+        return out
 
-        # ALBERT model for embedding
-        self.albert = AlbertModel.from_pretrained(albert_model_name)
-        self.dropout = nn.Dropout(0.1)
+input_size = bert_model.config.hidden_size
+hidden_size = 100
+num_classes = 2
+model = MLP(input_size=input_size, hidden_size=hidden_size, num_classes=num_classes)
 
-        # MLP for classification
-        self.mlp = nn.Sequential(
-            nn.Linear(mlp_input_dim, mlp_hidden_dim), # input layer
-            nn.ReLU(), # activation function
-            nn.Dropout(0.1), # dropout added as regularizer
-            nn.Linear(mlp_hidden_dim, num_classes) # classification layer
-        )
-
-    def forward(self, input_ids, attention_mask):
-        # BERT embedding
-        outputs = self.albert(input_ids, attention_mask=attention_mask) 
-        pooled_output = outputs['pooler_output']
-        pooled_output = self.dropout(pooled_output)
-
-        # MLP classification
-        logits = self.mlp(pooled_output)
-        return logits
-
-
-# training
-model = ALBERTMLPClassifier()
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 num_epochs = 10
@@ -138,12 +140,11 @@ loss_values = []
 for epoch in range(num_epochs):
     index = 0
     print("epoch : ", epoch)
-    for batch_x, attention_mask, batch_y in train_loader:
+    for embeddings, y_labels in train_loader:
         optimizer.zero_grad() # 
-        # new_batch_x = torch.split(batch_x, 512,1)[0]
-        # new_attention_mask = torch.split(attention_mask, 512,1)[0]
-        logits = model(batch_x, attention_mask)
-        loss = criterion(logits, batch_y)
+
+        logits = model(embeddings)
+        loss = criterion(logits, y_labels)
         loss.backward()
         optimizer.step()
     loss_values.append(loss.item())
