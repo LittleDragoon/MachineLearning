@@ -32,7 +32,7 @@ for i in range(len(X_data)):
     tokenized_batches = []
     attention_masks_batches = []
 
-    for batch_number in range(len(mail_i), data_batch_size):
+    for batch_number in range(0, len(mail_i), data_batch_size):
         # tokenize data
         batch_texts = mail_i[batch_number:batch_number+data_batch_size]
         tokenized_batch = tokenizer(batch_texts, return_tensors='pt', padding=True, truncation=True, max_length=512)
