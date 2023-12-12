@@ -8,18 +8,20 @@
 import pdb
 import torch
 import torch.nn as nn
-from transformers import BertModel, BertTokenizer, AlbertModel, AlbertTokenizer
-from torch.utils.data import DataLoader, TensorDataset
+from transformers import AlbertModel
 from transformers import AutoTokenizer
 from Enron_dataset.file_reader import File_reader
 import numpy as np
 import matplotlib.pyplot as plt
+from preprocess_text import preprocess_text
+from sklearn.utils import shuffle
 
 # 1) Create dataloader from enron dataset
 bert_model_name = "albert-base-v2"
 fr = File_reader()
 X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = 200)
 
+X_data = [preprocess_text(mail) for mail in X_data]
 ### 2) From data (string) to Tokenized data and Attention masks tensors before padding
 
 tokenizer = AutoTokenizer.from_pretrained(bert_model_name)
@@ -69,11 +71,12 @@ flattened_features = X_attention_masks_after_padding.clone().detach().to(dtype=t
 ### 4) We now have X_tokenized_after_padding (Tokenized data with padding) and flattened_features (Attention masks pooled)
 ### We can now create a PyTorch dataset and data loaders
 
-# Question : Here, do we need to standardize the data/featnures ?
+# Question : Here, do we need to standardize the data/features ?
 
 X = X_tokenized_after_padding.clone().detach().to(dtype=torch.int64)
 y = Y_label.clone().detach().to(dtype=torch.int64)
 
+X, flattened_features, y = shuffle(X, flattened_features, y, random_state=42)
 
 # Manual split into train and test sets
 SPLIT_RATIO = 0.8
