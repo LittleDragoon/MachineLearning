@@ -71,6 +71,16 @@ for epoch in range(num_epochs):
         optimizer.step()
     loss_values.append(loss.item())
     print(f"Epoch {epoch+1}/{num_epochs} : loss = {loss.item():.4f}")
+    # compute accuracy on test set
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        for embeddings, y_labels in test_loader:
+            logits = model(embeddings)
+            _, predicted = torch.max(logits.data, 1)
+            total += y_labels.size(0)
+            correct += (predicted == y_labels).sum().item()
+        print(f"Accuracy on test set: {100 * correct / total}%")
 
 print(loss_values)
 plt.figure(figsize=(10, 5))
