@@ -19,7 +19,9 @@ from sklearn.utils import shuffle
 # 1) Create dataloader from enron dataset
 bert_model_name = "albert-base-v2"
 fr = File_reader()
-X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = 200)
+
+number_spam = 200
+X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = number_spam)
 
 X_data = [preprocess_text(mail) for mail in X_data]
 ### 2) From data (string) to Tokenized data and Attention masks tensors before padding
@@ -51,7 +53,7 @@ for i in range(len(X_data)):
 ### 3) Add padding (to size of longest data)
 
 # max_len = max([len(tensor[0]) for tensor in X_tokenized_before_padding])
-max_len = 512
+max_len = 4096
 
 for i in range(len(X_tokenized_before_padding)):
     if X_tokenized_before_padding[i].size(1) > max_len:
@@ -81,6 +83,9 @@ X, flattened_features, y = shuffle(X, flattened_features, y, random_state=42)
 # Manual split into train and test sets
 SPLIT_RATIO = 0.8
 split_idx = int(SPLIT_RATIO * len(X))
+number_train = int(number_spam * 2 * SPLIT_RATIO)
+number_test = int(number_spam * 2 * (1 - SPLIT_RATIO))
+
 
 X_train, attention_mask_train, y_train = X[:split_idx], flattened_features[:split_idx], y[:split_idx]
 X_test, attention_mask_test, y_test = X[split_idx:], flattened_features[split_idx:], y[split_idx:]
@@ -96,13 +101,24 @@ torch.save(y_train, "./embeddings/y_train.pt")
 torch.save(y_test, "./embeddings/y_test.pt")
 
 
-# 400 mails en tout (320 train, 80 test)
-
 step = 10
-for i_train in range(0,320,step): 
-    train_embeddings = extract_bert_embeddings(bert_model, X_train[i_train:(i_train+step)], attention_mask_train[i_train:(i_train+step)])
-    torch.save(train_embeddings, "./embeddings/train_embeddings"+str(i_train)+".pt")
+column_size = 512
 
-for i_test in range(0,80,step):
-    test_embeddings = extract_bert_embeddings(bert_model, X_test[i_test:(i_test+step)], attention_mask_test[i_test:(i_test+step)])
-    torch.save(test_embeddings, "./embeddings/test_embeddings"+str(i_test)+".pt")
+for i_train in range(0,number_train,step): 
+    total_train_embeddings = []
+    for column in range(0,max_len,column_size):
+        X_train_split = torch.narrow(X_train[i_train:(i_train+step)], 1, column, column_size)
+        train_embeddings = extract_bert_embeddings(bert_model, X_train_split, attention_mask_train[i_train:(i_train+step)])
+        total_train_embeddings.append(train_embeddings)
+    total_train_embeddings = torch.cat(total_train_embeddings, dim=1)
+    torch.save(total_train_embeddings.clone().detach(), "./embeddings/train_embeddings"+str(i_train)+".pt")
+
+
+for i_test in range(0,number_test,step):
+    total_test_embeddings = []
+    for column in range(0,max_len,column_size):
+        X_test_split = torch.narrow(X_test[i_test:(i_test+step)], 1, column, column_size)
+        test_embeddings = extract_bert_embeddings(bert_model, X_test_split, attention_mask_test[i_test:(i_test+step)])
+        total_test_embeddings.append(test_embeddings)
+    total_test_embeddings = torch.cat(total_test_embeddings, dim=1)
+    torch.save(total_test_embeddings.clone().detach(), "./embeddings/test_embeddings"+str(i_test)+".pt")
