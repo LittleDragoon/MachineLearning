@@ -48,9 +48,7 @@ class MLP(nn.Module):
         out = self.fc2(out)
         return out
 
-bert_model_name = "albert-base-v2"
-bert_model = AlbertModel.from_pretrained(bert_model_name)
-input_size = bert_model.config.hidden_size
+input_size = train_embeddings.shape[1]
 hidden_size = 100
 num_classes = 2
 model = MLP(input_size=input_size, hidden_size=hidden_size, num_classes=num_classes)
@@ -64,7 +62,6 @@ for epoch in range(num_epochs):
     print("epoch : ", epoch)
     for embeddings, y_labels in train_loader:
         optimizer.zero_grad() # 
-
         logits = model(embeddings)
         loss = criterion(logits, y_labels)
         loss.backward()
