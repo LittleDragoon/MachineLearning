@@ -5,22 +5,25 @@
 # Elle sera donc entrainée en même temps que le reste du réseau et permettra au réseau de mieux comprendre les mots
 
 # penser à enlever les caractères spéciaux, les \n (à remplacer par des espaces),...
-import pdb
+
 import torch
 import torch.nn as nn
-from transformers import AlbertModel
+from transformers import BertModel
 from transformers import AutoTokenizer
 from Enron_dataset.file_reader import File_reader
-import numpy as np
-import matplotlib.pyplot as plt
 from preprocess_text import preprocess_text
 from sklearn.utils import shuffle
+import gc
+from memory_profiler import profile
+
+# use gpu
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # 1) Create dataloader from enron dataset
-bert_model_name = "albert-base-v2"
+bert_model_name = "bert-base-uncased"
 fr = File_reader()
 
-number_spam = 200
+number_spam = 2000
 X_data, Y_label = fr.load_ham_and_spam(ham_paths = "default", spam_paths = "default", max = number_spam)
 
 X_data = [preprocess_text(mail) for mail in X_data]
@@ -39,11 +42,11 @@ for i in range(len(X_data)):
     for batch_number in range(0, len(mail_i), data_batch_size):
         # tokenize data
         batch_texts = mail_i[batch_number:batch_number+data_batch_size]
-        tokenized_batch = tokenizer(batch_texts, return_tensors='pt', padding=True, truncation=True, max_length=512)
-        tokenized_batches.append(tokenized_batch['input_ids'])
+        tokenized_batch = tokenizer(batch_texts, return_tensors='pt', padding=True, truncation=True, max_length=512).to(device)
+        tokenized_batches.append(tokenized_batch['input_ids'].to(device))
 
         # add attention mask 
-        batch_attention_mask = tokenized_batch['attention_mask']
+        batch_attention_mask = tokenized_batch['attention_mask'].to(device)
         attention_masks_batches.append(batch_attention_mask)
 
 
@@ -53,7 +56,7 @@ for i in range(len(X_data)):
 ### 3) Add padding (to size of longest data)
 
 # max_len = max([len(tensor[0]) for tensor in X_tokenized_before_padding])
-max_len = 4096
+max_len = 20480
 
 for i in range(len(X_tokenized_before_padding)):
     if X_tokenized_before_padding[i].size(1) > max_len:
@@ -87,11 +90,12 @@ number_train = int(number_spam * 2 * SPLIT_RATIO)
 number_test = int(number_spam * 2 * (1 - SPLIT_RATIO))
 
 
-X_train, attention_mask_train, y_train = X[:split_idx], flattened_features[:split_idx], y[:split_idx]
-X_test, attention_mask_test, y_test = X[split_idx:], flattened_features[split_idx:], y[split_idx:]
+X_train, attention_mask_train, y_train = X[:split_idx].to(device), flattened_features[:split_idx].to(device), y[:split_idx].to(device)
+X_test, attention_mask_test, y_test = X[split_idx:].to(device), flattened_features[split_idx:].to(device), y[split_idx:].to(device)
 
 # Compute the embeddings
-bert_model = AlbertModel.from_pretrained(bert_model_name)
+bert_model = BertModel.from_pretrained(bert_model_name)
+bert_model.to(device)
 def extract_bert_embeddings(model, input_ids, attention_mask):
     outputs = model(input_ids, attention_mask)
     embeddings = outputs.last_hidden_state[:,0,:] # CLS token, representation of the whole sequence
@@ -104,21 +108,23 @@ torch.save(y_test, "./embeddings/y_test.pt")
 step = 10
 column_size = 512
 
-for i_train in range(0,number_train,step): 
-    total_train_embeddings = []
-    for column in range(0,max_len,column_size):
-        X_train_split = torch.narrow(X_train[i_train:(i_train+step)], 1, column, column_size)
-        train_embeddings = extract_bert_embeddings(bert_model, X_train_split, attention_mask_train[i_train:(i_train+step)])
-        total_train_embeddings.append(train_embeddings)
-    total_train_embeddings = torch.cat(total_train_embeddings, dim=1)
-    torch.save(total_train_embeddings.clone().detach(), "./embeddings/train_embeddings"+str(i_train)+".pt")
+
+with torch.no_grad():
+    for i_train in range(0,number_train,step): 
+        total_train_embeddings = []
+        for column in range(0,max_len,column_size):
+            X_train_split = torch.narrow(X_train[i_train:(i_train+step)], 1, column, column_size) 
+            train_embeddings = extract_bert_embeddings(bert_model, X_train_split, attention_mask_train[i_train:(i_train+step)]) 
+            total_train_embeddings.append(train_embeddings)
+        total_train_embeddings = torch.cat(total_train_embeddings, dim=1)
+        torch.save(total_train_embeddings.clone().detach(), "./embeddings/train_embeddings"+str(i_train)+".pt")
 
 
-for i_test in range(0,number_test,step):
-    total_test_embeddings = []
-    for column in range(0,max_len,column_size):
-        X_test_split = torch.narrow(X_test[i_test:(i_test+step)], 1, column, column_size)
-        test_embeddings = extract_bert_embeddings(bert_model, X_test_split, attention_mask_test[i_test:(i_test+step)])
-        total_test_embeddings.append(test_embeddings)
-    total_test_embeddings = torch.cat(total_test_embeddings, dim=1)
-    torch.save(total_test_embeddings.clone().detach(), "./embeddings/test_embeddings"+str(i_test)+".pt")
+    for i_test in range(0,number_test,step):
+        total_test_embeddings = []
+        for column in range(0,max_len,column_size):
+            X_test_split = torch.narrow(X_test[i_test:(i_test+step)], 1, column, column_size)
+            test_embeddings = extract_bert_embeddings(bert_model, X_test_split, attention_mask_test[i_test:(i_test+step)])
+            total_test_embeddings.append(test_embeddings)
+        total_test_embeddings = torch.cat(total_test_embeddings, dim=1)
+        torch.save(total_test_embeddings.clone().detach(), "./embeddings/test_embeddings"+str(i_test)+".pt")
