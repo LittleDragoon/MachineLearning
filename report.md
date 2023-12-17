@@ -114,6 +114,7 @@ Dans un premier temps, nous avons réalisé un entraînement avec entre 2.000 et
 Pour simplifier le problème et comprendre la racine du problème, nous avons donc décidé de réduire drastiquement le nombre de mails puis de l’augmenter au fur et à mesure. L’idée était de trouver des paramètres qui permettent de faire diminuer la training loss, puis d’utiliser ces paramètres comme point de départ pour réaliser l’apprentissage avec un nombre de données plus important.
 
 1. Loss obtenu avec 16 mails de training
+
    ![Loss avec 16 mails](images/image1.png)
 
 En utilisant un MLP à 3 couches, de 500, 100 puis 20 neurones; un learning rate de 0.0001, nous somme parvenu à faire tomber la training loss à 0. Ce modèle est probablement trop grand pour s’entraîner avec seulement 16 mails, mais notre objectif premier était de faire diminuer la loss, et ce modèle y parvient.
