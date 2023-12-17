@@ -165,7 +165,7 @@ Avec le modèle obtenu, nous avons pu constater une accuracy sur la base de test
 
 <br/>
 <br/>
-Nous avions conscience que ce résultat est loin de ce qu’il serait possible d’obtenir en réalisant le fine-tuning d’un modèle Bert, ou même en conservant notre modèle. En effet, nous sommes convaincus qu’avec davantage de temps et/ou de ressources, il serait possible de trouver d’encore meilleurs paramètres et de parvenir à faire apprendre la classification des spams au modèle en lui fournissant bien plus que 500 mails.
+Nous avons conscience que ce résultat est loin de ce qu’il serait possible d’obtenir en réalisant le fine-tuning d’un modèle Bert, ou même en conservant notre modèle. En effet, nous sommes convaincus qu’avec davantage de temps et/ou de ressources, il serait possible de trouver d’encore meilleurs paramètres et de parvenir à faire apprendre la classification des spams au modèle en lui fournissant bien plus que 500 mails.
 
 Une autre solution que nous n’avons pas expérimentée serait de figer certains paramètres du Bert ou de Albert en utilisant des méthodes comme LoRa ou QLoRa et qui permettraient de réaliser l’apprentissage plus facilement.
 
