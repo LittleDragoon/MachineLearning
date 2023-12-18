@@ -50,7 +50,7 @@ Nous utilisons ici le tokenizer du modèle “bert-base-uncased” qui est une s
 
 Il existe néanmoins une contrainte : l’input ne doit pas dépasser une taille maximale de 512 tokens. C’est pourquoi pour chaque mail, nous le décomposons en “batch”, le tokenisons, et le concaténons par la suite avec le reste des batchs.
 Par la suite, comme chaque mail tokenisé doit faire la même longueur (_max_len_), nous appliquons un “padding” aux mails trop courts (rajouter les 0 jusqu’à ce que les tokens fassent la bonne taille) et nous troquons les mails trop longs.
-Ce ne sera un problème pour la suite car le tensor _attention_mask_, composé de 1 ou de 0, donne les informations nécessaires au modèle pour identifier le padding.
+Ce ne sera pas un problème pour la suite car le tensor _attention_mask_, composé de 1 ou de 0, donne les informations nécessaires au modèle pour identifier le padding.
 
 </div>
 
@@ -117,7 +117,7 @@ Pour simplifier le problème et comprendre la racine du problème, nous avons do
 
    ![Loss avec 16 mails](images/image1.png)
 
-En utilisant un MLP à 3 couches, de 500, 100 puis 20 neurones; un learning rate de 0.0001, nous somme parvenu à faire tomber la training loss à 0. Ce modèle est probablement trop grand pour s’entraîner avec seulement 16 mails, mais notre objectif premier était de faire diminuer la loss, et ce modèle y parvient.
+En utilisant un MLP à 3 couches, de 500, 100 puis 20 neurones; un learning rate de 0.0001, nous sommes parvenus à faire tomber la training loss à 0. Ce modèle est probablement trop grand pour s’entraîner avec seulement 16 mails, mais notre objectif premier était de faire diminuer la loss, et ce modèle y parvient.
 
 Nous sommes également parvenus à faire diminuer la loss avec un MLP à une seule couche de 100 neurones avec un training de plusieurs milliers d’épochs.
 
@@ -143,12 +143,12 @@ Nous calculions en même temps l’accuracy sur la base de train pour suivre la 
 
 ![Loss avec 400 mails](images/image6.png)
 
-On remarque de fortes oscillations sur la training loss. Cela était dû au fait que nous ne faisions pas la moyenne des valeurs de loss sur une époch. Nous avons donc réglé ce problème et tracé de nouveau la loss.
+On remarque de fortes oscillations sur la training loss. Après coup, nous avons remarqué que nous ne faisions pas la moyenne des valeurs de loss sur une époch. Nous avons donc réglé ce problème et tracé de nouveau la loss.
 
 ![Loss avec 400 mails](images/500_mails_mean_3.png)
 ![Loss avec 400 mails](images/500_mails_mean_3_acc.png)
 
-Nous ne sommes pas parvenus cette fois-ci à faire diminuer énormément la training loss. On remarque également que l’accuracy sur la base de test atteint presque les 70%. Nous avons tenté d’augmenter la capacité de notre modèle en augmentant le nombre de neurones par couches, en modifiant le nombre de mails par batch et en augmentant le nombre d’épochs. Cela n'a pas permis d'améliorer l'accuracy sur la base de test. Pour augmenter cette dernière, il semble donc falloir augmenter encore le nombre de mails.
+Nous ne sommes pas parvenus cette fois-ci à faire diminuer énormément la training loss. Toutefois, on remarque que l’accuracy sur la base de test atteint presque les 70%. Nous avons tenté d’augmenter la capacité de notre modèle en augmentant le nombre de neurones par couches, en modifiant le nombre de mails par batch et en augmentant le nombre d’épochs. Cela n'a pas permis d'améliorer l'accuracy sur la base de test. Pour augmenter cette dernière, il semble donc falloir augmenter encore le nombre de mails.
 
 4. 2. Voici le résultat auquel nous sommes parvenus avec un MLP disposant de 800 neurones sur sa première couche, 200 sur la seconde et 20 sur la dernière, un learning rate qui débute à lr à 0.00007 puis diminue progressivement jusqu’à 0.00003 et des batchs de 200 mails :
 
@@ -171,7 +171,7 @@ Avec le modèle obtenu sur 500 mails, nous avons pu constater une accuracy sur l
 <br/>
 Nous avons conscience que ce résultat est loin de ce qu’il serait possible d’obtenir en réalisant le fine-tuning d’un modèle Bert, ou même en conservant notre modèle. En effet, nous sommes convaincus qu’avec davantage de temps et/ou de ressources, il serait possible de trouver d’encore meilleurs paramètres et de parvenir à faire apprendre la classification des spams au modèle en lui fournissant bien plus que 500 mails.
 
-Une autre solution que nous n’avons pas expérimentée serait de figer certains paramètres du Bert ou de Albert en utilisant des méthodes comme LoRa ou QLoRa et qui permettraient de réaliser l’apprentissage plus facilement.
+Une autre solution que nous n’avons pas expérimenté serait de figer certains paramètres du Bert ou de Albert en utilisant des méthodes comme LoRa ou QLoRa et qui permettraient de réaliser l’apprentissage plus facilement.
 
 </div>
 
