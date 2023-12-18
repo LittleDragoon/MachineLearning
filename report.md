@@ -131,7 +131,7 @@ Nous sommes également parvenus à faire diminuer la loss avec un MLP à une seu
 
 On remarque que la training loss descend beaucoup moins.
 
-3. 2. Pour contrer cela, nous avons mis en place un learning rate évolutif, qui commence à lr = 0.0005 puis diminue de moitié toutes les 600 épochs. Cela a permis d’obtenir de meilleurs résultats.
+3. 2. Pour contrer cela, nous avons mis en place un learning rate évolutif, qui commence à lr = 0.0005 puis diminue de moitié toutes les 600 épochs. Cela a permis d’obtenir de meilleurs résultats. De manière générale, tout au long de ce projet, nous avons remarqué que lorsque la loss ne diminuait pas, diminuer le learning rate était souvent la démarche à adopter.
 
 ![Loss avec 80 mails avec un learning rate dégressif](images/image4.png)
 
