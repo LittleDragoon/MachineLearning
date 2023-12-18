@@ -1,16 +1,17 @@
 <!-- Title -->
-<h1 style="text-align: center;">Spam Email Detection</h1>
-<div style="text-align: center; font-size:14px">Erwan LEBAILLY et Benjamin ZHU - 4A Mines Nancy - 18 Décembre 2023</div>
+<h1 align="center">Spam Email Detection</h1>
+<div align="center" >Erwan LEBAILLY et Benjamin ZHU - 4A Mines Nancy - 18 Décembre 2023</div>
 
 <!-- Introduction -->
-<h2 style="">Introduction</h2>
-<p style="text-align: justify">En 2023, le spam représente environ entre 70% et 80% du trafic total de l’email. La majeure partie est filtrée en amont par les outils anti-spams des messagerie et le reste tombe dans le dossier Indésirables. Ces spams représentent également une source de danger pour certaines personnes (phishing). C’est donc sur cette thématique, actuelle, que nous avons choisi de travailler et d’entraîner un modèle de Machine Learning pouvant détecter la nature du mail.
+<h2>Introduction</h2>
+<p align="justify">En 2023, le spam représente environ entre 70% et 80% du trafic total de l’email. La majeure partie est filtrée en amont par les outils anti-spams des messagerie et le reste tombe dans le dossier Indésirables. Ces spams représentent également une source de danger pour certaines personnes (phishing). C’est donc sur cette thématique, actuelle, que nous avons choisi de travailler et d’entraîner un modèle de Machine Learning pouvant détecter la nature du mail.
 
 Le code se trouve sur le répertoire Github suivant : https://github.com/LittleDragoon/MachineLearning</p>
 
+<br/>
 <!-- Choix dataset -->
-<h2 style="">Choix du Dataset</h2>
-<div style="text-align: justify">
+<h2>Choix du Dataset</h2>
+<div align="justify">
 Pour ce faire, nous avons trouvé deux jeux de données en open-source intéressants que sont “Spambase dataset” et “Enron Dataset”.
 <br/><br/>
 Au tout début du projet, nous avons choisi Spambase qui est un dataset contenant 4601 mails, avec une proportion de 39,4% de spams et 60,6% de ham (non-spam). Chaque mail, associé à un label 1 pour spam et 0 pour ham, est déjà transformé sous forme d’un vecteur de 57 features spécifique aux mails, comme la fréquence des mots. Cependant, cette transformation induit nécessairement une limitation. En effet, le choix des features est déjà une réduction de l’information et constitue un biais. 
@@ -18,26 +19,30 @@ Au tout début du projet, nous avons choisi Spambase qui est un dataset contenan
 Afin d’éviter cela, nous avons ensuite décidé d’exploiter le dataset Enron, contenant environ 500 000 emails en anglais, générés par les 150 employés de Enron Corporation dans les années 2000. Pour notre cas, n’ayant pas de carte graphique suffisamment puissante ou très peu de ressources pour faire tourner un modèle sur un large dataset, nous avons décidé de réaliser l’entraînement sur seulement quelques centaines ou milliers d'emails avec une répartition parfaite entre le nombre de spams et de hams. Le modèle associé à ce dataset sera un modèle BERT, performant pour transformer les mails en tokens et de créer des embeddings.
 
 </div>
+
+<br/>
 <!-- Charger dataset -->
 <h2>Charger le dataset</h2>
 
 Pour récupérer les données, nous avons utilisé comme point de départ un répertoire [Github](https://github.com/sijoonlee/spam-ham-walkthrough?tab=readme-ov-file) et plus particulièrement son fichier file_reader.py.
 
-<div style="text-align: justify"> Ce programme nous permet de choisir un nombre de mails, de les charger à partir des dossiers “enron” en local, puis de concaténer les spams et les hams dans une variable data. En sortie, nous obtenons cette variable <i>data</i>, et un tensor de label associé aux mails (<i>y_label</i>). 
+<div align="justify"> Ce programme nous permet de choisir un nombre de mails, de les charger à partir des dossiers “enron” en local, puis de concaténer les spams et les hams dans une variable data. En sortie, nous obtenons cette variable <i>data</i>, et un tensor de label associé aux mails (<i>y_label</i>). 
 <br/>
 <br/>
 N’ayant pas trouvé de projet similaire, pour toute la suite du projet, nous avons nous-mêmes écrit le code.
 <div>
 
+<br/>
 <!-- Process dataset -->
 <h2>Pre-process le dataset</h2>
-<div style="text-align: justify">
+<div align="justify">
 Une fois les données récupérées, les données sont pré-processées dans le fichier <i>preprocess_text.py</i>. Cette étape constitue un aspect important qui permet d’enlever toutes les informations “inutiles” dans les données, comme les majuscules, la ponctuation ou même les sauts de lignes. Nous avons également introduit une étape de “stemming” pour transformer chaque mot en son mot “racine”. 
 </div>
 
+<br/>
 <!-- Tokenization -->
 <h2>Tokenization du dataset via Bert</h2>
-<div style="text-align: justify">
+<div align="justify">
 Vous trouverez le code dans le fichier <i>“./embeddings.py”</i>.
 <br/><br/>
 
@@ -49,9 +54,10 @@ Ce ne sera un problème pour la suite car le tensor _attention_mask_, composé d
 
 </div>
 
+<br/>
 <!-- Embeddings -->
 <h2>Embeddings du dataset via Bert</h2>
-<div style="text-align: justify">
+<div align="justify">
 Dans un premier temps, nous avons tenté de fine-tuner le BERT, mais cela n’a pas été réalisable avec le matériel dont nous disposions. Nous avons également tenté de réaliser le finetuning sur le modèle Albert, qui dispose de 11 millions de paramètres, soit dix fois moins que Bert. Cependant, cela nécessitait aussi des ressources trop importantes. Nous avons donc fait le choix de ne pas fine-tuner le Bert pré-entraîné et de ne générer qu’une seule fois les embeddings. 
 <br/><br/>
 
@@ -61,9 +67,10 @@ Par manque de ressources (puissance / RAM), nous avons fait le choix d’enregis
 
 </div>
 
+<br/>
 <!-- Dataloaders -->
 <h2>Création des datasets et dataloaders</h2>
-<div style="text-align: justify">
+<div align="justify">
 Vous trouverez le code dans le fichier <i>“./run_MLP.py”</i>.
 <br/><br/>
 
@@ -71,9 +78,10 @@ Nous avons créé une fonction _load_files_ qui récupère tous les fichiers tra
 
 </div>
 
+<br/>
 <!-- MLP -->
 <h2>Création d’un MLP</h2>
-<div style="text-align: justify">
+<div align="justify">
 Pour réaliser cette classification binaire entre les spams et les non-spams, nous avons codé un réseau de neurones Multi-Perceptron (MLP) classique, qui comporte une ou plusieurs couches cachées linéaires suivies de fonctions d’activations ReLU. 
 <br/><br/>
 
@@ -92,9 +100,10 @@ Les hyperparamètres sont :
 
 </div>
 
+<br/>
 <!-- Résultats -->
 <h2>Résultats (Training et Accuracy)</h2>
-<div style="text-align: justify">
+<div align="justify">
 Nous avons tenté dans un premier temps d’entraîner le modèle en se limitant pour chaque mail à la taille maximum que peut accepter le Bert, à savoir 512 tokens. Cependant, cela induisait une trop grande réduction de la taille des mails et nous ne parvenions pas à faire diminuer la training loss.
 <br/><br/>
 
@@ -105,6 +114,7 @@ Dans un premier temps, nous avons réalisé un entraînement avec entre 2.000 et
 Pour simplifier le problème et comprendre la racine du problème, nous avons donc décidé de réduire drastiquement le nombre de mails puis de l’augmenter au fur et à mesure. L’idée était de trouver des paramètres qui permettent de faire diminuer la training loss, puis d’utiliser ces paramètres comme point de départ pour réaliser l’apprentissage avec un nombre de données plus important.
 
 1. Loss obtenu avec 16 mails de training
+
    ![Loss avec 16 mails](images/image1.png)
 
 En utilisant un MLP à 3 couches, de 500, 100 puis 20 neurones; un learning rate de 0.0001, nous somme parvenu à faire tomber la training loss à 0. Ce modèle est probablement trop grand pour s’entraîner avec seulement 16 mails, mais notre objectif premier était de faire diminuer la loss, et ce modèle y parvient.
@@ -121,7 +131,7 @@ Nous sommes également parvenus à faire diminuer la loss avec un MLP à une seu
 
 On remarque que la training loss descend beaucoup moins.
 
-3. 2. Pour contrer cela, nous avons mis en place un learning rate évolutif, qui commence à lr = 0.0005 puis diminue de moitié toutes les 600 épochs. Cela a permis d’obtenir de meilleurs résultats.
+3. 2. Pour contrer cela, nous avons mis en place un learning rate évolutif, qui commence à lr = 0.0005 puis diminue de moitié toutes les 600 épochs. Cela a permis d’obtenir de meilleurs résultats. De manière générale, tout au long de ce projet, nous avons remarqué que lorsque la loss ne diminuait pas, diminuer le learning rate était souvent la démarche à adopter.
 
 ![Loss avec 80 mails avec un learning rate dégressif](images/image4.png)
 
@@ -144,9 +154,10 @@ On remarque que la training loss diminue davantage, même si cela paraît peu. N
 
 </div>
 
+<br/>
 <!-- Conclusion -->
 <h2>Conclusion</h2>
-<div style="text-align: justify">
+<div align="justify">
 Au début de notre projet, nous ne parvenions pas à faire apprendre notre modèle sur une base de plusieurs milliers d’emails : la training loss diminuait peu voire pas du tout et l’accuracy sur la base de test stagnait aux alentours de 50%. Nous pouvions alors douter de la capacité même du MLP à classifier les mails à partir des tokens de classification que lui transmettait le Bert. En effet, nous avions conscience que l’idéal aurait été de fine-tuner le Bert, mais nous n’en avions pas les capacités.
 <br/><br/>
 En recommençant le processus d’apprentissage avec un nombre réduit de mail, nous sommes parvenus à faire diminuer plus facilement la training loss en ajustant les paramètres du modèle. En augmentant le nombre d’emails, la diminution de la training loss était moins marquée, mais toujours présente. Pour des raisons de temps, nous nous sommes arrêtés à un apprentissage sur une base de 500 mails. 
@@ -154,15 +165,16 @@ Avec le modèle obtenu, nous avons pu constater une accuracy sur la base de test
 
 <br/>
 <br/>
-Nous avions conscience que ce résultat est loin de ce qu’il serait possible d’obtenir en réalisant le fine-tuning d’un modèle Bert, ou même en conservant notre modèle. En effet, nous sommes convaincus qu’avec davantage de temps et/ou de ressources, il serait possible de trouver d’encore meilleurs paramètres et parvenir à faire apprendre la classification des spams au modèle en lui fournissant bien plus que 500 mails.
+Nous avons conscience que ce résultat est loin de ce qu’il serait possible d’obtenir en réalisant le fine-tuning d’un modèle Bert, ou même en conservant notre modèle. En effet, nous sommes convaincus qu’avec davantage de temps et/ou de ressources, il serait possible de trouver d’encore meilleurs paramètres et de parvenir à faire apprendre la classification des spams au modèle en lui fournissant bien plus que 500 mails.
 
 Une autre solution que nous n’avons pas expérimentée serait de figer certains paramètres du Bert ou de Albert en utilisant des méthodes comme LoRa ou QLoRa et qui permettraient de réaliser l’apprentissage plus facilement.
 
 </div>
 
+<br/>
 <!-- Rétrospective -->
 <h2>Rétrospective sur le projet</h2>
-<div style="text-align: justify">
+<div align="justify">
 Cette partie, absolument facultative pour le rapport, est personnelle et permet de laisser une trace de notre pensée tout au long de ce projet.
 
 <br/>
