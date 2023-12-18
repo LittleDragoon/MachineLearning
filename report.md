@@ -145,20 +145,16 @@ Nous calculions en même temps l’accuracy sur la base de train pour suivre la 
 
 On remarque de fortes oscillations sur la training loss. Cela était dû au fait que nous ne faisions pas la moyenne des valeurs de loss sur une époch. Nous avons donc réglé ce problème et tracé de nouveau la loss.
 
-![Loss avec 400 mails](images/500_mails_mean.png)
+![Loss avec 400 mails](images/500_mails_mean_3.png)
+![Loss avec 400 mails](images/500_mails_mean_3_acc.png)
 
-On remarque de plus faibles oscillations. Pour palier ces dernières oscillations, nous avons ajusté plus finement le learning rate
-
-![Loss avec 400 mails](images/500_mails_mean_2.png)
-![Accuracy avec 400 mails](images/500_mails_mean_2_acc.png)
-
-La training loss diminue, mais reste toujours largement de 0. On remarque également que l’accuracy sur la base de train ne dépasse pas les 73%. Nous avons tenté d’augmenter la capacité de notre modèle en augmentant le nombre de neurones par couches, en modifiant le nombre de mails par batch et en augmentant le nombre d’épochs.
+La training loss diminue moins. On remarque également que l’accuracy sur la base de train ne dépasse pas les 70%. Nous avons tenté d’augmenter la capacité de notre modèle en augmentant le nombre de neurones par couches, en modifiant le nombre de mails par batch et en augmentant le nombre d’épochs.
 
 4. 2. Voici le résultat auquel nous sommes parvenus avec un MLP disposant de 800 neurones sur sa première couche, 200 sur la seconde et 20 sur la dernière, un learning rate qui débute à lr à 0.00007 puis diminue progressivement jusqu’à 0.00003 et des batchs de 200 mails :
 
-![Loss avec 400 mails amélioré](images/800_mails_mean.png)
+![Loss avec 400 mails amélioré](images/800_mails_mean_2.png)
 
-On remarque que la training loss diminue un peu moins. Néanmoins, nous pouvons constater un début d’apprentissage avec le modèle obtenu, puisque celui-ci obtient une accuracy d’environ 60% sur une base de test comportant 100 mails.
+On remarque que la training loss diminue encore moins. Néanmoins, nous pouvons constater un début d’apprentissage avec le modèle obtenu, puisque celui-ci obtient une accuracy d’environ 60% sur une base de test comportant 100 mails.
 
 </div>
 
