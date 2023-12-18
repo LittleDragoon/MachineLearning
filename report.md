@@ -148,13 +148,13 @@ On remarque de fortes oscillations sur la training loss. Cela était dû au fait
 ![Loss avec 400 mails](images/500_mails_mean_3.png)
 ![Loss avec 400 mails](images/500_mails_mean_3_acc.png)
 
-Nous ne sommes pas parvenus cette fois-ci à faire diminuer énormément la training loss. On remarque également que l’accuracy sur la base de train ne dépasse pas les 70%. Nous avons tenté d’augmenter la capacité de notre modèle en augmentant le nombre de neurones par couches, en modifiant le nombre de mails par batch et en augmentant le nombre d’épochs.
+Nous ne sommes pas parvenus cette fois-ci à faire diminuer énormément la training loss. On remarque également que l’accuracy sur la base de test atteint presque les 70%. Nous avons tenté d’augmenter la capacité de notre modèle en augmentant le nombre de neurones par couches, en modifiant le nombre de mails par batch et en augmentant le nombre d’épochs. Cela n'a pas permis d'améliorer l'accuracy sur la base de test. Pour augmenter cette dernière, il semble donc falloir augmenter encore le nombre de mails.
 
 4. 2. Voici le résultat auquel nous sommes parvenus avec un MLP disposant de 800 neurones sur sa première couche, 200 sur la seconde et 20 sur la dernière, un learning rate qui débute à lr à 0.00007 puis diminue progressivement jusqu’à 0.00003 et des batchs de 200 mails :
 
-![Loss avec 400 mails amélioré](images/800_mails_mean_2.png)
+![Loss avec 800 mails amélioré](images/800_mails_mean_2.png)
 
-La training loss ne diminue toujours pas énormément. Néanmoins, nous pouvons constater un début d’apprentissage avec le modèle obtenu, puisque celui-ci obtient une accuracy d’environ 60% sur une base de test comportant 100 mails.
+La training loss ne diminue toujours pas énormément. De plus, l'accuracy obtenue est d’environ 60% sur une base de test comportant 160 mails. Nous n'avons pas réussi à parvenir à un meilleur résultat.
 
 </div>
 
@@ -164,8 +164,8 @@ La training loss ne diminue toujours pas énormément. Néanmoins, nous pouvons 
 <div align="justify">
 Au début de notre projet, nous ne parvenions pas à faire apprendre notre modèle sur une base de plusieurs milliers d’emails : la training loss diminuait peu voire pas du tout et l’accuracy sur la base de test stagnait aux alentours de 50%. Nous pouvions alors douter de la capacité même du MLP à classifier les mails à partir des tokens de classification que lui transmettait le Bert. En effet, nous avions conscience que l’idéal aurait été de fine-tuner le Bert, mais nous n’en avions pas les capacités.
 <br/><br/>
-En recommençant le processus d’apprentissage avec un nombre réduit de mail, nous sommes parvenus à faire diminuer plus facilement la training loss en ajustant les paramètres du modèle. En augmentant le nombre d’emails, la diminution de la training loss était moins marquée, mais toujours présente. Pour des raisons de temps, nous nous sommes arrêtés à un apprentissage sur une base de 500 mails. 
-Avec le modèle obtenu, nous avons pu constater une accuracy sur la base de test allant jusqu’à 63%. Ce résultat est significativement meilleur que ce que nous avions au tout début et constitue en soi la preuve que notre modèle est capable d’apprendre à classifier les mails.
+En recommençant le processus d’apprentissage avec un nombre réduit de mail, nous sommes parvenus à faire diminuer plus facilement la training loss en ajustant les paramètres du modèle. En augmentant le nombre d’emails, la diminution de la training loss était moins marquée, mais toujours présente. Pour des raisons de temps, nous nous sommes arrêtés à un apprentissage sur une base de 800 mails. 
+Avec le modèle obtenu sur 500 mails, nous avons pu constater une accuracy sur la base de test allant jusqu’à 70%, et sur le modèle avec 800 mails une accuracy de 63% maximum. Ce résultat est significativement meilleur que ce que nous avions au tout début et constitue en soi la preuve que notre modèle est capable d’apprendre à classifier les mails.
 
 <br/>
 <br/>
